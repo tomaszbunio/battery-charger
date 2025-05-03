@@ -245,8 +245,8 @@ float abs_time;
 
 
 
-unsigned long myChannelNumber = 1074127;
-const char* myWriteAPIKey = "OC9W1CY1OQFQAH8I";
+unsigned long myChannelNumber = *******;
+const char* myWriteAPIKey = "**************";
 
 unsigned long previousMillis = 0;  // Zmienna do przechowywania poprzedniego stanu millis
 const long interval = 1000;        // Interwał czasowy w milisekundach (1 sekunda)
