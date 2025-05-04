@@ -7,14 +7,16 @@
 #include "common.h"
 #include "sdcard.h"
 #include "charger.h"
-
 #include <string.h>
 
-uint16_t intervals_min[26] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 };
-//uint16_t intervals_min[26] = { 30, 60, 90, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 1200, 1260, 1320, 1380, 1440 };
+//uint16_t intervals_min[26] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 }; // do testów
+uint16_t intervals_min[26] = { 30, 60, 90, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 1200, 1260, 1320, 1380, 1440 };
 uint16_t intervals_h[18] = { 60, 120, 180, 240, 300, 360, 450, 540, 630, 720, 810, 900, 990, 1080, 1170, 1260, 1350, 1440 };
 uint16_t intervals[26] = {};
 uint16_t intervals_size = 18;
+
+uint8_t pwm_memory = 2;  // Pamięć ostatniego stabilnego PWM (globalnie)
+void handle_bulk_mode();
 
 bool save_flags[26] = { false };
 bool asym_ch = true;
@@ -25,17 +27,16 @@ bool float_alw_on = false;
 String batt_abs_current[26] = {};
 String abs_current = " ";
 bool AutomaticEndOfCharging = false;
+ChargingType charging_type = normal_charging;
 
-uint8_t li_battery_type = 1.25;
+float li_battery_type = 1.25;
 uint8_t load_div = 50;
 
 float li_ion_currentOff = 0.125;
 float last_capacity_disch;
 float last_capacity_ch;
 float elapsed_capacity_ch;
-float elapsed_capacity_disch;
 float cur_capacity_ch;
-float cur_capacity_disch;
 float prev_capacity_ch, prev_capacity_disch;
 float li_normal_mode;
 float li_fast_mode;
@@ -50,7 +51,7 @@ void handle_initial_mode() {
 
   if (!asym_mode) {
     if (busvoltage > MIN_BAT_VOLTS) {
-      float target_current = battery[battery_type].capacity / asymetry_charging;
+      float target_current = battery[battery_type].capacity / initial_charging;
       if (current_auto > (target_current + 0.01)) {
         pwm--;
         charge_pwm_duty();
@@ -63,7 +64,7 @@ void handle_initial_mode() {
     }
   }
 
-  else {  // asym_mode == true
+  else if (asym_mode) {  // asym_mode == true
     handle_asym_mode();
   }
 
@@ -74,7 +75,10 @@ void handle_initial_mode() {
 }
 
 void handle_asym_mode() {
-  float capacity = battery[battery_type].capacity;
+
+  float capacity = battery[battery_type].capacity;              // Pojemność akumulatora
+  float charge_target = capacity / 1000.0;                      // 1/1000 pojemności do ładowania
+  float discharge_target = charge_target * (asym_val / 100.0);  // % rozładowania względem poprzedniego ładowania
 
   if (asym_ch) {  // ładowanie
     float target_current = capacity / charging_type;
@@ -87,17 +91,18 @@ void handle_asym_mode() {
       charge_pwm_duty();
     }
 
-    if ((ampHours - prev_capacity_ch) >= (capacity / 1000)) {
+    if ((ampHours - prev_capacity_ch) >= charge_target) {
       prev_capacity_disch = ampHours_m;
       asym_ch = false;
-      pwm = 2;
+      pwm_memory = pwm;  // ZAPAMIĘTAJ PWM!
+      pwm = 0;
       charge_pwm_duty();
     }
   }
 
   else {  // rozładowanie
     discharge_pwm_duty(PWM_MAX);
-    if ((abs(ampHours_m) + prev_capacity_disch) >= (capacity / 2000)) {
+    if ((abs(ampHours_m) + prev_capacity_disch) >= discharge_target) {
       prev_capacity_ch = ampHours;
       asym_ch = true;
       discharge_pwm_duty(PWM_MIN);
@@ -114,6 +119,14 @@ void handle_asym_mode() {
   Serial.print(ampHours_m - prev_capacity_disch, 3);
   Serial.print("  ");
   Serial.println(pwm);
+
+  if (busvoltage >= NOM_BAT_VOLTS) {
+    asym_ch = true;
+    //handle_bulk_mode();
+    charger_state = bulk;
+    Serial.println("=> Opuszczono tryb asymetryczny");
+    return;
+  }
 }
 //*****************************************************************************************************
 
@@ -122,6 +135,8 @@ void handle_bulk_mode() {
 
   // Przejście do absorption
   if (busvoltage > battery[battery_type].u_bulk) {
+    pwm = 0;
+    charge_pwm_duty();
     force_sd = true;
     logger_time();  // zapis do datalog.csv
     String abs_current = String("0") + "h = " + String(current_auto);
@@ -374,7 +389,7 @@ void handle_bat_disch_mode() {
     if (pwm > 512) pwm = 512;
 
     // Przejście w tryb off, jeśli osiągnięto napięcie końcowe
-    if (busvoltage <= dischVoltage + 0.05) {
+    if (busvoltage <= dischVoltage + 0.01) {
       Serial.println("Rozładowanie zakończone – przejście do OFF");
       DischarSet = false;     // <--- ZATRZYMA powrót do bat_disch
       DischarStart = false;   // <--- ZATRZYMA powrót do bat_disch

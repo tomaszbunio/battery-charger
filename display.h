@@ -12,7 +12,7 @@ extern class INA219 ina219;
 extern void drawMenu(void);
 
  
-extern uint8_t li_battery_type;
+extern float li_battery_type;
 extern String czas;
 extern uint16_t sd_num;
 extern int pwm;

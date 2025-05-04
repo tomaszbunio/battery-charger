@@ -12,7 +12,36 @@
 
 extern TBATTERY_TYPE battery_type;
 extern TBATT battery[7];
-bool XloadingInfo = false;
+bool SDloadingInfo = false;
+
+String generate_battery_info() {
+  String Sbattery_type = "";
+  String Scharging_type = "";
+
+  // Określenie typu baterii na podstawie battery_type
+  switch (battery_type) {
+    case battery_std: Sbattery_type = "Battery_STD "; break;
+    case battery_gel: Sbattery_type = "Battery_GEL "; break;
+    case battery_agm: Sbattery_type = "Battery_AGM "; break;
+    case battery_caca: Sbattery_type = "Battery_CaCa "; break;
+    case battery_li_2s: Sbattery_type = "Battery_Li2s "; break;
+    case battery_li_3s: Sbattery_type = "Battery_Li3s "; break;
+    default: Sbattery_type = "Unknown Battery "; break;
+  }
+
+  // Określenie typu ładowania
+  switch (charging_type) {
+    //case initial_charging: Scharging_type = "Init charging"; break;
+    case normal_charging: Scharging_type = "Normal charging"; break;
+    case fast_charging: Scharging_type = "Fast charging"; break;
+    case recond_charging: Scharging_type = "Recond charging"; break;
+    case asymetry_charging: Scharging_type = "Asymetry charging"; break;
+    default: Scharging_type = "Unknown charging"; break;
+  }
+
+  // Zwrócenie tekstu z informacjami o baterii i trybie ładowania
+  return Sbattery_type + String(uint8_t(battery[battery_type].capacity)) + "Ah " + Scharging_type;
+}
 
 void check_page() {
 
@@ -328,29 +357,15 @@ void check_page() {
 
     else if (page == 1 && menuitem == 1) {
 
-      String Sbattery_type = "";
-      String Scharging_type = "";
 
 
-      if (battery_type == battery_std) Sbattery_type = "Battery_STD ";
-      else if (battery_type == battery_gel) Sbattery_type = "Battery_GEL ";
-      else if (battery_type == battery_agm) Sbattery_type = "Battery_AGM ";
-      else if (battery_type == battery_caca) Sbattery_type = "Battery_CaCa ";
-      else if (battery_type == battery_li_2s) Sbattery_type = "Battery_Li2s ";
-      else if (battery_type == battery_li_3s) Sbattery_type = "Battery_Li3s ";
-
-      if (charging_type == normal_charging) Scharging_type = "Normal charging";
-      else if (charging_type == fast_charging) Scharging_type = "Fast charging";
-      else if (charging_type == recond_charging) Scharging_type = "Recond charging";
-      else if (charging_type == asymetry_charging) Scharging_type = "Asymetry charging";
-
-      String loadingInfo = Sbattery_type + String(uint8_t(battery[battery_type].capacity)) + "Ah" + " " + Scharging_type + "\r\n";  // start/stop
-      if (!XloadingInfo) {
+      String loadingInfo = generate_battery_info();
+      if (!SDloadingInfo) {
         appendFile(SD, stats_filename, loadingInfo.c_str());  // zapisz dane tylko jeden raz
         appendFile(SD, stats_filename, "\r\n");
         appendFile(SD, stats_filename, "----------------------------------- \r\n");
       }
-      XloadingInfo = true;
+      SDloadingInfo = true;
       diff_save_sd = true;
       logger_time();
 
@@ -503,7 +518,7 @@ void check_page() {
       if (menuitem == 4) {
         charging_type = asymetry_charging;
         asym_mode = true;
-        //recond = true;
+        page = 132;
       }
       page = 1;
       menuitem = 1;
@@ -522,7 +537,7 @@ void check_page() {
       page = 1;
       menuitem = 1;
     } else if (page == 132) {
-      page = 131;
+      page = 1;
       menuitem = 1;
     } else if (page == 133) {
       page = 1;

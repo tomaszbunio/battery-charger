@@ -39,7 +39,7 @@ extern uint8_t menuitem;
 
 extern float li_normal_mode;
 extern float li_fast_mode;
-extern  uint8_t recond_charging;
+//extern  uint8_t recond_charging;
 
 extern float u_min;
 extern float u_bulk;

@@ -13,11 +13,11 @@
 #include <ESPmDNS.h>
 #include <Update.h>
 #include "ThingSpeak.h"
-
 #include "FS.h"
 #include "SD.h"
 #include <SPI.h>
 #include <Preferences.h>
+
 
 //-----------------------------------------------------------------------------------------------------------------------//
 
@@ -33,7 +33,6 @@
 const char* COMPILATION = "1.0";
 bool SerialPort = 1;
 const char* MyHostName = "ESP32-Charger";
-//uint16_t time_max_charging = 1440;
 
 extern class INA219 ina219;
 extern class AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, -1, ROTARY_ENCODER_STEPS);
@@ -131,19 +130,12 @@ const uint16_t charging_freq = 5000;     //częstotliwość pwm
 const uint8_t pwm_charge_channel = 1;    //kanał pwm
 const uint8_t charging_resolution = 12;  //rozdzielczość pwm 1024
 const uint16_t charging_MAX_DUTY_CYCLE = (int)(pow(2, charging_resolution) - 1);
-uint8_t asym_val = 10;
+float asym_val = 10.0;
 
 const uint16_t discharging_freq = 5000;     //częstotliwość pwm
 const uint8_t pwm_discharge_channel = 2;    //kanał pwm
 const uint8_t discharging_resolution = 12;  //rozdzielczość pwm 1024
 const uint16_t discharging_MAX_DUTY_CYCLE = (int)(pow(2, discharging_resolution) - 1);
-
-uint8_t charging_type;
-uint8_t fast_charging = 5;
-uint8_t normal_charging = 10;
-uint8_t recond_charging = 10;
-uint8_t asymetry_charging = 20;
-
 const uint8_t SDchipSelect = 5;  //pin SS czytnika SD
 
 uint16_t PWM_MAX = 1024;  // warość PWM określająca 100% wypełnienia
@@ -163,8 +155,6 @@ uint16_t seconds_storage, minutes_storage, hours_storage;  //zmienna przechowuj�
 uint16_t seconds_float, minutes_float, hours_float;        // zmienna inkrementowana bez ograniczenia 59 min
 uint16_t minutess_abs;
 uint16_t minutess_storage, minutess_float;
-//int minutess_abs;
-//uint8_t pot_pos = 0;
 uint8_t sd_seconds = 0;
 uint8_t sd_minutes = 0;
 
@@ -174,7 +164,6 @@ float dischVoltage = 10.5;
 
 bool start_timer_absorption = false;
 bool force_sd = false;
-//bool charging_end = false;
 bool flag_start_timer_float = false;
 bool use_min_intervals = true;
 bool ChargingMode = false;
@@ -193,9 +182,9 @@ bool asym_mode = false;
 
 
 byte time_sec, time_min, time_hour, wifi_status;  //zmienne niesformatowane przechowujące czas i status wifi
-byte mode_C20 = 20;
-byte mode_C10 = 10;
-byte mode_C8 = 8;
+// byte mode_C20 = 20;
+// byte mode_C10 = 10;
+// byte mode_C8 = 8;
 
 uint8_t fan_manual = 60;
 uint16_t sd_interval = 1000;
@@ -245,8 +234,8 @@ float abs_time;
 
 
 
-unsigned long myChannelNumber = *******;
-const char* myWriteAPIKey = "**************";
+unsigned long myChannelNumber = 1074127;
+const char* myWriteAPIKey = "OC9W1CY1OQFQAH8I";
 
 unsigned long previousMillis = 0;  // Zmienna do przechowywania poprzedniego stanu millis
 const long interval = 1000;        // Interwał czasowy w milisekundach (1 sekunda)
@@ -455,11 +444,24 @@ void read_data() {
 
 }
 void read_eep() {
+  // Odczyt danych z pamięci flash
+  Rshunt = preferences.getFloat("rshunt", 0.0f);
+  ssid = preferences.getString("ssid", "");
+  password = preferences.getString("password", "");
 
-  Rshunt = preferences.getFloat("rshunt", 0);        // odczyt rshunt z flash
-  ssid = preferences.getString("ssid", "");          // odczytaj z flash
-  password = preferences.getString("password", "");  // odczytaj z flash
+  // Debugowanie
+  Serial.println(F("=== EEPROM ODCZYT ==="));
+  Serial.print(F("Rshunt: "));
+  Serial.println(Rshunt, 6);  // z dokładnością do 6 miejsc po przecinku
+
+  Serial.print(F("SSID: "));
+  Serial.println(ssid);
+
+  Serial.print(F("Hasło: "));
+  Serial.println(password);
+  Serial.println(F("======================"));
 }
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -945,12 +947,17 @@ void print_serial(void) {
   Serial.print(page);
   Serial.print("- Menuitem -");
   Serial.print(menuitem);
-  Serial.print("- DischarStart -");
-  Serial.print(DischarStart);
-  Serial.print("- DischarSet -");
-  Serial.print(DischarSet);
-  Serial.print("- CurrentDisch -");
-  Serial.print(CurrentDisch);
+  // Serial.print("- DischarStart -");
+  // Serial.print(DischarStart);
+  // Serial.print("- DischarSet -");
+  // Serial.print(DischarSet);
+  // Serial.print("- CurrentDisch -");
+  // Serial.print(CurrentDisch);
+ Serial.print("- asym_mode -");
+  Serial.print(asym_mode);
+
+
+
   // Serial.print("- menuitem_stop =");
   // Serial.println(menuitem_stop);
   // Serial.print("- battery_type =");

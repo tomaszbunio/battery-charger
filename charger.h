@@ -16,6 +16,8 @@ void log_absorption_currents();
 bool check_absorption_end_conditions();
 bool check_absorption_li_ion_end();
 
+extern ChargingType charging_type;
+
 extern ChargerTime chargerTime[6];
 extern TBATT battery[7];
 extern TCHARGER_STATE charger_state;
@@ -27,6 +29,6 @@ extern uint16_t intervals_min[];
 extern uint16_t intervals_h[];
 extern uint16_t intervals[];
 extern bool AutomaticEndOfCharging;
-//extern uint8_t intervals_size;  extern nie jest potrzebne
+
 
 #endif

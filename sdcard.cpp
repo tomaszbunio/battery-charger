@@ -15,10 +15,25 @@
 
 
 //-----------------------------------------------------------------------------------------------------------------------//
-
+bool sdAvailable = false;
 int n = 0;  // nr pliku na sd
 
-void sd_check() {  // initialialize SD card
+void sd_check() {
+  if (!SD.begin(SDchipSelect)) {
+    if (DEBUG_SD) {
+      Serial.println("Card Mount Failed");
+    }
+    sdAvailable = false;
+    return;
+  }
+
+  // Karta SD jest dostępna
+  sdAvailable = true;
+}
+
+
+
+void sd_init() {  // initialialize SD card
 
   SD.begin(SDchipSelect);
   if (!SD.begin(SDchipSelect)) {
@@ -38,7 +53,7 @@ void sd_check() {  // initialialize SD card
   }
   String PID_String = "";
   PID_String += "kp=" + String(kp) + ";" + "ki=" + String(ki) + ";" + "kd=" + String(kd) + "\r\n" + "\r\n";
-  writeFile(SD, pid_filename, PID_String.c_str());                          // zapisz nowy plik na sd
+  writeFile(SD, pid_filename, PID_String.c_str());                       // zapisz nowy plik na sd
   appendFile(SD, pid_filename, "Czas; P; I; D; Output;Napiecie; \r\n");  // dopisz dane na sd
 
   //++++++++++++++++++++++++++++++++++++++++++ nagłówek pliku datalog ++++++++++++++++++++++++++++++++++++++++++++++
@@ -108,18 +123,13 @@ void logger_time(void) {
   if (charging_end == false) pid_log(P, I, D, pidValue);
 
   if (
-     (charging_end == false && diff_save_sd == true) ||
-     (auto_save_sd == false) ||
-     (force_sd == true) ||
-     (DischarStart && diff_save_sd == true)
-   )
- {  // "jeżeli trwa ładowanie i jest różnica lub automatyczny zapis na sd jest wył"
+    (charging_end == false && diff_save_sd == true) || (auto_save_sd == false) || (force_sd == true) || (DischarStart && diff_save_sd == true)) {  // "jeżeli trwa ładowanie i jest różnica lub automatyczny zapis na sd jest wył"
     force_sd = false;
     String dataString = "";
     dataString += czas + ";" + String(busvoltage) + ";" + String(current_auto) + ";" + String(ampHours) + ";" + String(power_W) + ";" + String(wattHours) + "\r\n";
     dataString.replace('.', ',');
     if (DEBUG_SD) {
-     //Serial.println("datalog_saved");
+      //Serial.println("datalog_saved");
     }
     appendFile(SD, filename, dataString.c_str());
     diff_save_sd = false;
@@ -135,7 +145,7 @@ void logLine(String text) {
 void stats_log() {
   logLine(" Initial time - " + czas_initial + "\r\n");
   logLine(" Initial Ah - " + String(initial_Ah) + "\r\n");
-  
+
   logLine(" Bulk time - " + czas_bulk + "\r\n");
   logLine(" Bulk Ah - " + String(bulk_Ah) + "\r\n");
 

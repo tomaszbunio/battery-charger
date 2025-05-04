@@ -10,6 +10,7 @@
 extern class Preferences preferences;
 
 extern void sd_check();
+extern void sd_init();
 extern void alarm_led(uint16_t x, byte z);
 extern void logger_time(void);
 extern void appendFile(fs::FS& fs, const char* path, const char* message);
@@ -36,7 +37,7 @@ extern double ki;  // Współczynnik całkujący
 extern double kd;       // Współczynnik różniczkujący
 extern uint16_t pidValue;
 
-
+extern bool sdAvailable;
 
 
 

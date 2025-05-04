@@ -1,4 +1,8 @@
-//  NOWE MENU PAGE 14
+//  v1.1 
+// - dodałem możliwość wyjęcia karty sd podczas pracy, a po ponownym włożeniu zapis jest kontunuowany, ale jak nie ma karty s a problemy ze startem po resecie
+
+
+
 /*
   Szkic używa 945169 bajtów (72%) pamięci programu. Zmienne globalne używają 52380 bajtów. 01.05.2025
   usprawnienia do zrobienia: uruchomienie bez wifi, debug z menu, recond z wykrywaniem naładowania, zapis nastaw do flash,
@@ -9,7 +13,6 @@
 
 
 #include <Arduino.h>
-
 #include <Timers.h>  // dołączona biblioteka Timers do obsługi wątków
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -50,16 +53,21 @@ void IRAM_ATTR readEncoderISR() {
 U8G2_ST7567_ENH_DG128064I_F_HW_I2C u8g2(U8G2_R2, U8X8_PIN_NONE);
 INA219 ina219;
 
-Timers<8> akcja;
+Timers<9> akcja;
 
 /////////////////////////////////////////////////////////
 
 void setup() {
 
   Serial.begin(115200);
+  Serial.println(F("Wersja: " VERSION_STRING));
+  Serial.print(F("Data kompilacji: "));
+  Serial.print(__DATE__);
+  Serial.print(" ");
+  Serial.println(__TIME__);
   if (SerialPort) Serial.println("Serial port ready");
   preferences.begin("credentials", false);
-  sd_check();
+  sd_init();
   read_eep();  // odczyt rShunt, ssid oraz pass z flash
 
   if (WIFI_FUNC) {
@@ -91,7 +99,7 @@ void setup() {
   ina219.configure(INA219::RANGE_32V, INA219::GAIN_8_320MV, INA219::ADC_128SAMP, INA219::ADC_128SAMP, INA219::CONT_SH_BUS);
   ina219.calibrate(Rshunt, V_SHUNT_MAX, V_BUS_MAX, I_MAX_EXPECTED);
 
-  pinMode(ROTARY_ENCODER_A_PIN, INPUT_PULLUP);  // czy musi być pullup?
+  pinMode(ROTARY_ENCODER_A_PIN, INPUT_PULLUP);  
   pinMode(ROTARY_ENCODER_B_PIN, INPUT_PULLUP);
   rotaryEncoder.begin();
   rotaryEncoder.setup(readEncoderISR);
@@ -107,8 +115,7 @@ void setup() {
   akcja.attach(5, 100039, check_wifi_status);
   akcja.attach(6, 30011, wyslij_speak);
   akcja.attach(7, 997, print_serial);
-
-  //errSum = 0;
+  akcja.attach(8, 1003, sd_check);
   
 }
 

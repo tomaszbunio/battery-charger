@@ -35,12 +35,24 @@
 #define DEBUG_SD 1
 #define DEBUG_READ_DATA 0
 #define THINGSPEAK 0
-#define PID 0
+#define PID 1
 
 extern const char* MyHostName;
 extern bool SerialPort;
 extern void bat_init(void);
 extern const char* COMPILATION;
+
+// build_version.h
+#define VERSION_MAJOR 1
+#define VERSION_MINOR 0
+#define VERSION_PATCH 0
+#define VERSION_BUILD 42  // będzie zwiększane automatycznie
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
+#define VERSION_STRING \
+  TOSTRING(VERSION_MAJOR) "." TOSTRING(VERSION_MINOR) "." TOSTRING(VERSION_PATCH) "-" TOSTRING(VERSION_BUILD)
 
 typedef struct {
   float u_bulk;
@@ -60,6 +72,15 @@ typedef struct {
 
 extern ChargerTime chargerTime[6];
 
+typedef enum ChargingType {
+    initial_charging = 19,
+    normal_charging = 10,
+    fast_charging = 5,
+    recond_charging = 9,
+    asymetry_charging = 20
+};
+extern ChargingType charging_type;
+
 typedef enum battery_mode { battery_none,
                             battery_std,
                             battery_gel,
@@ -75,7 +96,8 @@ typedef enum charger_mode { off,
                             absorption,
                             storage,
                             bat_float,
-                            bat_disch } TCHARGER_STATE;
+                            bat_disch 
+                            } TCHARGER_STATE;
 extern TCHARGER_STATE charger_state;
 
 extern uint8_t abs_little_intervals;
@@ -178,7 +200,7 @@ extern float bulk_Ah;
 extern float abs_Ah;
 extern float float_Ah;
 extern float storage_Ah;
-extern uint8_t asym_val;
+extern float asym_val;
 extern float min_voltage_li_2s;
 extern float min_voltage_li_3s;
 
@@ -211,11 +233,11 @@ extern const uint16_t charging_MAX_DUTY_CYCLE;
 extern const uint16_t discharging_MAX_DUTY_CYCLE;
 
 extern const uint8_t SDchipSelect;  //pin SS czytnika SD
-extern uint8_t charging_type;
-extern uint8_t fast_charging;
-extern uint8_t normal_charging;
-extern uint8_t recond_charging;
-extern uint8_t asymetry_charging;
+//extern uint8_t charging_type;
+////extern uint8_t fast_charging;
+//extern uint8_t normal_charging;
+//extern uint8_t recond_charging;
+//extern uint8_t asymetry_charging;
 
 extern float output;
 extern uint16_t pidValue;
