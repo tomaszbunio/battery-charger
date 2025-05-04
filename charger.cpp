@@ -111,15 +111,7 @@ void handle_asym_mode() {
 
   last_capacity_ch = ampHours;
   last_capacity_disch = ampHours_m;
-
-  Serial.print(asym_ch ? "ładowanie" : "rozładowanie");
-  Serial.print("  ");
-  Serial.print(ampHours - prev_capacity_ch, 3);
-  Serial.print("  ");
-  Serial.print(ampHours_m - prev_capacity_disch, 3);
-  Serial.print("  ");
-  Serial.println(pwm);
-
+ 
   if (busvoltage >= NOM_BAT_VOLTS) {
     asym_ch = true;
     //handle_bulk_mode();
